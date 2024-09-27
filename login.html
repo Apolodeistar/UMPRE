@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Inicio de Sesión</title>
+</head>
+<body>
+    <h1>Iniciar Sesión</h1>
+    <form method="POST">
+        <label>Cédula:</label>
+        <input type="text" name="cedula" required>
+        <label>Contraseña:</label>
+        <input type="password" name="password" required>
+        <button type="submit">Iniciar Sesión</button>
+    </form>
+    <p>{{ get_flashed_messages() }}</p>
+</body>
+</html>

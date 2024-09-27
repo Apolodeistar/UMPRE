@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Subir Resultados</title>
+</head>
+<body>
+    <h1>Subir Resultados de Exámenes</h1>
+    <form method="POST" enctype="multipart/form-data">
+        <label>Cédula del Paciente:</label>
+        <input type="text" name="cedula" required>
+        <label>Archivo:</label>
+        <input type="file" name="archivo" required>
+        <button type="submit">Subir Resultado</button>
+    </form>
+    <p>{{ get_flashed_messages() }}</p>
+</body>
+</html>
