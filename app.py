@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for, flash
 from flask_sqlalchemy import SQLAlchemy
-from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user
+from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 
 app = Flask(__name__)
 app.secret_key = 'tu_clave_secreta'
@@ -8,12 +8,14 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+mysqlconnector://usuario:contrase
 db = SQLAlchemy(app)
 login_manager = LoginManager()
 login_manager.init_app(app)
+login_manager.login_view = 'login'
 
 # Modelos
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     cedula = db.Column(db.String(20), unique=True, nullable=False)
     password = db.Column(db.String(100), nullable=False)
+    role = db.Column(db.String(10), nullable=False)  # doctor o paciente
 
 class Resultado(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -29,8 +31,10 @@ def load_user(user_id):
 def create_tables():
     db.create_all()
     if not User.query.filter_by(cedula='123456789').first():
-        new_user = User(cedula='123456789', password='contraseña123')
-        db.session.add(new_user)
+        new_doctor = User(cedula='123456789', password='contraseña123', role='doctor')
+        new_paciente = User(cedula='987654321', password='contraseña456', role='paciente')
+        db.session.add(new_doctor)
+        db.session.add(new_paciente)
         db.session.commit()
 
 # Rutas
@@ -44,20 +48,40 @@ def login():
         cedula = request.form['cedula']
         password = request.form['password']
         user = User.query.filter_by(cedula=cedula).first()
+
         if user and user.password == password:
-            login_user(user)
-            return redirect(url_for('subir_resultado'))  # Redirige a subir resultados
+            login_user(user)  # Autentica al usuario
+
+            # Verifica el rol y redirige según el rol del usuario
+            if user.role == 'doctor':
+                return redirect(url_for('doctor_dashboard'))
+            elif user.role == 'paciente':
+                return redirect(url_for('paciente_dashboard'))
+
         flash('Credenciales incorrectas.')
+    
     return render_template('login.html')
 
-@app.route('/dashboard')
+@app.route('/dashboard/doctor')
 @login_required
-def dashboard():
-    return render_template('dashboard.html')
+def doctor_dashboard():
+    if current_user.role != 'doctor':
+        return redirect(url_for('403'))
+    return render_template('dashboard_doctor.html')
+
+@app.route('/dashboard/paciente')
+@login_required
+def paciente_dashboard():
+    if current_user.role != 'paciente':
+        return redirect(url_for('403'))
+    return render_template('dashboard_paciente.html')
 
 @app.route('/subir_resultado', methods=['GET', 'POST'])
 @login_required
 def subir_resultado():
+    if current_user.role != 'doctor':
+        return redirect(url_for('403'))  # Solo los doctores pueden subir resultados
+
     if request.method == 'POST':
         cedula = request.form['cedula']
         archivo = request.files['archivo']
@@ -66,10 +90,12 @@ def subir_resultado():
         db.session.add(resultado)
         db.session.commit()
         flash('Resultado subido exitosamente.')
-        return redirect(url_for('subir_resultado'))  # Redirige nuevamente a la misma página
+        return redirect(url_for('subir_resultado'))
+
     return render_template('subir_resultado.html')
 
 @app.route('/ver_resultados', methods=['GET', 'POST'])
+@login_required
 def ver_resultados():
     resultados = None
     if request.method == 'POST':
@@ -79,10 +105,35 @@ def ver_resultados():
             flash('No se encontraron resultados para esta cédula.')
     return render_template('ver_resultados.html', resultados=resultados)
 
-@app.route('/resultados/<cedula>')
-def resultados(cedula):
-    resultados = Resultado.query.filter_by(cedula=cedula).all()
-    return render_template('resultados.html', resultados=resultados)
+@app.route('/editar_resultado/<int:id>', methods=['GET', 'POST'])
+@login_required
+def editar_resultado(id):
+    if current_user.role != 'doctor':
+        return redirect(url_for('403'))  # Solo los doctores pueden editar resultados
+    
+    resultado = Resultado.query.get_or_404(id)
+    
+    if request.method == 'POST':
+        archivo = request.files['archivo']
+        archivo.save(f'static/resultados/{archivo.filename}')
+        resultado.archivo = archivo.filename  # Actualiza el archivo en la base de datos
+        db.session.commit()
+        flash('Resultado actualizado exitosamente.')
+        return redirect(url_for('ver_resultados'))
+
+    return render_template('editar_resultado.html', resultado=resultado)
+
+@app.route('/eliminar_resultado/<int:id>', methods=['POST'])
+@login_required
+def eliminar_resultado(id):
+    if current_user.role != 'doctor':
+        return redirect(url_for('403'))  # Solo los doctores pueden eliminar
+    
+    resultado = Resultado.query.get_or_404(id)
+    db.session.delete(resultado)
+    db.session.commit()
+    flash('Resultado eliminado exitosamente.')
+    return redirect(url_for('ver_resultados'))
 
 @app.route('/logout')
 @login_required
@@ -90,33 +141,9 @@ def logout():
     logout_user()
     return redirect(url_for('home'))
 
+@app.route('/403')
+def acceso_denegado():
+    return render_template('403.html')
+
 if __name__ == '__main__':
     app.run(debug=True)
-
-
-
-
-
-
-
-
-
-
-
-#mysql para xampp
-
-
--- Crear tabla User
-CREATE TABLE User (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    cedula VARCHAR(20) NOT NULL UNIQUE,
-    password VARCHAR(100) NOT NULL
-);
-
--- Crear tabla Resultado
-CREATE TABLE Resultado (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    cedula VARCHAR(20) NOT NULL,
-    archivo VARCHAR(100) NOT NULL,
-    FOREIGN KEY (cedula) REFERENCES User(cedula)
-);
