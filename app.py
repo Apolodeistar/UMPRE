@@ -41,7 +41,7 @@ def create_tables():
 @app.route('/')
 def home():
     return render_template('index.html')
-
+#login
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
@@ -61,14 +61,14 @@ def login():
         flash('Credenciales incorrectas.')
     
     return render_template('login.html')
-
+#dashboard de doctores
 @app.route('/dashboard/doctor')
 @login_required
 def doctor_dashboard():
     if current_user.role != 'doctor':
         return redirect(url_for('403'))
     return render_template('dashboard_doctor.html')
-
+#dashboard de pacientes
 @app.route('/dashboard/paciente')
 @login_required
 def paciente_dashboard():
@@ -76,11 +76,14 @@ def paciente_dashboard():
         return redirect(url_for('403'))
     return render_template('dashboard_paciente.html')
 
+
+
+# Solo los doctores pueden subir resultados
 @app.route('/subir_resultado', methods=['GET', 'POST'])
 @login_required
 def subir_resultado():
     if current_user.role != 'doctor':
-        return redirect(url_for('403'))  # Solo los doctores pueden subir resultados
+        return redirect(url_for('403'))  
 
     if request.method == 'POST':
         cedula = request.form['cedula']
@@ -104,7 +107,7 @@ def ver_resultados():
         if not resultados:
             flash('No se encontraron resultados para esta cédula.')
     return render_template('ver_resultados.html', resultados=resultados)
-
+#solo los doctores pueden editar los resultados
 @app.route('/editar_resultado/<int:id>', methods=['GET', 'POST'])
 @login_required
 def editar_resultado(id):
@@ -119,10 +122,10 @@ def editar_resultado(id):
         resultado.archivo = archivo.filename  # Actualiza el archivo en la base de datos
         db.session.commit()
         flash('Resultado actualizado exitosamente.')
-        return redirect(url_for('ver_resultados'))
+        return redirect(url_for('ver.resultados.html'))
 
     return render_template('editar_resultado.html', resultado=resultado)
-
+#solo los doctores pueden eliminar los documentos 
 @app.route('/eliminar_resultado/<int:id>', methods=['POST'])
 @login_required
 def eliminar_resultado(id):
@@ -134,12 +137,12 @@ def eliminar_resultado(id):
     db.session.commit()
     flash('Resultado eliminado exitosamente.')
     return redirect(url_for('ver_resultados'))
-
+#cierre de sesion
 @app.route('/logout')
 @login_required
 def logout():
     logout_user()
-    return redirect(url_for('home'))
+    return redirect(url_for('index.html'))
 
 @app.route('/403')
 def acceso_denegado():
