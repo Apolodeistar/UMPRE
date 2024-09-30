@@ -2,17 +2,20 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Subir Resultados</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Subir Resultado</title>
 </head>
 <body>
-    <h1>Subir Resultados de Exámenes</h1>
-    <form method="POST" enctype="multipart/form-data">
-        <label>Cédula del Paciente:</label>
-        <input type="text" name="cedula" required>
-        <label>Archivo:</label>
-        <input type="file" name="archivo" required>
+    <h1>Subir Resultado</h1>
+    <form action="subir.resultados.html" method="POST" enctype="multipart/form-data">
+        <label for="cedula">Cédula del cliente:</label>
+        <input type="text" id="cedula" name="cedula" required>
+        <br>
+        <label for="archivo">Archivo:</label>
+        <input type="file" id="archivo" name="archivo" required>
+        <br>
         <button type="submit">Subir Resultado</button>
     </form>
-    <p>{{ get_flashed_messages() }}</p>
+
 </body>
 </html>

@@ -2,29 +2,48 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ver Resultados</title>
 </head>
 <body>
-    <h1>Ver Resultados de Exámenes</h1>
-    <form method="POST">
-        <label>Cédula del Paciente:</label>
-        <input type="text" name="cedula" required>
-        <button type="submit">Ver Resultados</button>
+    <h1>Consultar Resultados</h1>
+    <form action="ver.resultados.html" method="POST">
+        <label for="cedula">Cédula:</label>
+        <input type="text" id="cedula" name="cedula" required>
+        <br>
+        <button type="submit">Buscar</button>
     </form>
-    
+
     {% if resultados %}
-        <h2>Resultados para la Cédula: {{ resultados[0].cedula }}</h2>
+        <h2>Resultados</h2>
         <ul>
             {% for resultado in resultados %}
                 <li>
-                    <a href="{{ url_for('static', filename='resultados/' + resultado.archivo) }}">
-                        {{ resultado.archivo }}
-                    </a>
+                    <!-- Enlace para que el usuario (doctor o paciente) descargue el archivo -->
+                    <a href="/static/resultados/{{ resultado.archivo }}" target="_blank">Descargar archivo</a>
+
+                    {% if current_user.role == 'doctor' %}
+                        <!-- Si el usuario es doctor, permite editar y eliminar -->
+                        <a href="{{ url_for('editar_resultado', id=resultado.id) }}">Editar</a>
+                        <form action="{{ url_for('eliminar_resultado', id=resultado.id) }}" method="POST" style="display:inline;">
+                            <button type="submit">Eliminar</button>
+                        </form>
+                    {% endif %}
                 </li>
             {% endfor %}
         </ul>
+    {% else %}
+        <p>No se encontraron resultados para la cédula ingresada.</p>
     {% endif %}
-    
-    <p>{{ get_flashed_messages() }}</p>
+
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <ul>
+          {% for message in messages %}
+            <li>{{ message }}</li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+    {% endwith %}
 </body>
 </html>

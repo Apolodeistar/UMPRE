@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editar Resultado</title>
+</head>
+<body>
+    <h1>Editar Resultado</h1>
+    <form action="{{ url_for('editar_resultado', id=resultado.id) }}" method="POST" enctype="multipart/form-data">
+        <label for="archivo">Nuevo Archivo:</label>
+        <input type="file" id="archivo" name="archivo" required>
+        <br>
+        <button type="submit">Actualizar</button>
+    </form>
+</body>
+</html>
